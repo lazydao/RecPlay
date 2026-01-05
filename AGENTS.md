@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-本仓库是一个 Windows 托盘应用，用于录制与回放键盘/鼠标操作。请按以下约定保持修改清晰、可维护、易审查。
+本仓库是一个 Windows 托盘应用，用于录制与回放鼠标操作（键盘录制在后续规划中）。请按以下约定保持修改清晰、可维护、易审查。
 
 ## Project Structure & Module Organization
 - 程序入口：`Program.cs` 启动 `TrayAppContext`。
