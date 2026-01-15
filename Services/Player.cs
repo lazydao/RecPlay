@@ -119,7 +119,7 @@ internal sealed class Player
                 mi = new NativeMethods.MOUSEINPUT
                 {
                     dwFlags = NativeMethods.MOUSEEVENTF_WHEEL,
-                    mouseData = (uint)inputEvent.WheelDelta,
+                    mouseData = unchecked((uint)inputEvent.WheelDelta),
                 },
             },
         };

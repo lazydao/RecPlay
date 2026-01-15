@@ -159,6 +159,8 @@ internal sealed class TrayAppContext : ApplicationContext
         finally
         {
             _isPlaying = false;
+            _playbackCts?.Dispose();
+            _playbackCts = null;
             _trayIcon.Text = "RecPlay";
             UpdateMenuState();
         }

@@ -6,3 +6,4 @@ obj/
 *.userosscache
 *.sln.docstates
 *.csproj.user
+publish/

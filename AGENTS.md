@@ -18,6 +18,23 @@
 - `dotnet run`：本地启动托盘应用进行手动验证。
 - `dotnet test`：若后续加入测试项目，用于运行测试。
 
+### 自包含发布（Publish Self-Contained）
+构建可独立运行的发布版本（无需目标机器安装 .NET 运行时）：
+
+```powershell
+# 构建自包含单文件可执行程序
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+
+# 拷贝图标文件到发布目录
+Copy-Item -Path Idle.png, Recording.png, Replaying.png -Destination publish\
+```
+
+发布后 `publish\` 目录包含：
+- `RecPlay.exe` - 自包含可执行文件（约 158MB，包含 .NET 运行时）
+- `Idle.png`, `Recording.png`, `Replaying.png` - 托盘图标文件
+
+将整个 `publish\` 目录拷贝到目标机器即可直接运行。
+
 ## Coding Style & Naming Conventions
 - 语言：C#（.NET 8 WinForms），已启用 Nullable 与 Implicit Usings。
 - 缩进：4 空格；尽量保持 ASCII 编码。

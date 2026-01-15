@@ -52,11 +52,14 @@ internal sealed class Recorder : IDisposable
 
     public IReadOnlyList<InputEvent> Stop()
     {
-        IsRecording = false;
-        _stopwatch.Stop();
-        CleanupHooks();
+        lock (_lock)
+        {
+            IsRecording = false;
+            _stopwatch.Stop();
+            CleanupHooks();
 
-        return new List<InputEvent>(_events);
+            return new List<InputEvent>(_events);
+        }
     }
 
     public void Dispose()
