@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Reflection;
 using System.Windows.Forms;
 using RecPlay.Hotkeys;
 using RecPlay.Models;
@@ -18,7 +19,7 @@ internal sealed class SettingsForm : Form
 
     public SettingsForm(UserSettings settings)
     {
-        Text = "RecPlay Settings";
+        Text = $"RecPlay Settings - v{GetAppVersion()}";
         StartPosition = FormStartPosition.CenterScreen;
         AutoScaleDimensions = new SizeF(96F, 96F);
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -192,5 +193,25 @@ internal sealed class SettingsForm : Form
                 Math.Max(desired.Width, MinimumSize.Width),
                 Math.Max(desired.Height, MinimumSize.Height));
         }
+    }
+
+    private static string GetAppVersion()
+    {
+        var version = typeof(SettingsForm).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion;
+
+        if (string.IsNullOrWhiteSpace(version))
+        {
+            version = typeof(SettingsForm).Assembly.GetName().Version?.ToString(3);
+        }
+
+        if (string.IsNullOrWhiteSpace(version))
+        {
+            return "1.0.0";
+        }
+
+        var metadataIndex = version.IndexOf('+');
+        return metadataIndex >= 0 ? version[..metadataIndex] : version;
     }
 }

@@ -13,6 +13,31 @@ RecPlay 是一个 Windows 托盘应用，用于录制与回放鼠标操作。支
 - 运行环境：Windows + .NET 8 SDK
 - 构建：`dotnet build`
 - 运行：`dotnet run`
+- 打包：`.\build.ps1 -Version 1.0.0`
+
+## 打包发布
+根目录 `build.ps1` 是本仓库的标准打包入口，会执行 Release 构建、自包含单文件发布，并生成可交付 zip。
+
+```powershell
+.\build.ps1 -Version 1.0.0
+```
+
+默认输出：
+- 应用目录：`release\RecPlay\`
+- 可执行文件：`release\RecPlay\RecPlay.exe`
+- 压缩包：`release\RecPlay-v1.0.0-win-x64.zip`
+
+可选参数：
+- `-Version`：版本号，支持 `1.0.0` 或 `v1.0.0` 输入。
+- `-Runtime`：运行时标识，默认 `win-x64`。
+- `-Configuration`：构建配置，默认 `Release`。
+- `-FrameworkDependent`：生成依赖目标机器 .NET Desktop Runtime 的包；当自包含 runtime pack 暂时无法 restore 时用于本地测试。
+- `-NoZip`：只生成发布目录，不生成 zip。
+
+### GitHub Actions
+`.github/workflows/package.yml` 可在 GitHub 上触发同一套打包流程：
+- 手动触发：Actions -> Package RecPlay -> Run workflow，输入版本号与 runtime。
+- 标签触发：推送 `v*` 标签，例如 `v1.0.0`，会生成 zip artifact 并创建或更新 GitHub Release。
 
 ## 使用方式
 1) 启动后托盘显示 RecPlay 图标。

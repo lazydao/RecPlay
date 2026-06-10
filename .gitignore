@@ -7,3 +7,5 @@ obj/
 *.sln.docstates
 *.csproj.user
 publish/
+release/
+RecPlay-*.zip

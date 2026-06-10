@@ -19,21 +19,28 @@
 - `dotnet test`：若后续加入测试项目，用于运行测试。
 
 ### 自包含发布（Publish Self-Contained）
-构建可独立运行的发布版本（无需目标机器安装 .NET 运行时）：
+根目录 `build.ps1` 是本仓库的标准打包入口，负责 Release 构建、自包含单文件发布、托盘图标拷贝与 zip 产物生成。
 
 ```powershell
-# 构建自包含单文件可执行程序
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
-
-# 拷贝图标文件到发布目录
-Copy-Item -Path Idle.png, Recording.png, Replaying.png -Destination publish\
+.\build.ps1 -Version 1.0.0
 ```
 
-发布后 `publish\` 目录包含：
-- `RecPlay.exe` - 自包含可执行文件（约 158MB，包含 .NET 运行时）
-- `Idle.png`, `Recording.png`, `Replaying.png` - 托盘图标文件
+如果当前环境无法 restore 自包含 runtime pack，可先生成依赖目标机器 .NET Desktop Runtime 的测试包：
 
-将整个 `publish\` 目录拷贝到目标机器即可直接运行。
+```powershell
+.\build.ps1 -Version 1.0.0 -FrameworkDependent
+```
+
+GitHub Actions 入口为 `.github/workflows/package.yml`：
+- `workflow_dispatch`：手动输入版本号、runtime，并选择是否生成 framework-dependent 包。
+- `push` `v*` 标签：自动打包并创建或更新 GitHub Release。
+
+发布后 `release\` 目录包含：
+- `release\RecPlay\RecPlay.exe` - 自包含可执行文件（包含 .NET 运行时）
+- `release\RecPlay\Idle.png`, `Recording.png`, `Replaying.png` - 托盘图标文件
+- `release\RecPlay-v<version>-win-x64.zip` - 可直接分发的压缩包
+
+将整个 `release\RecPlay\` 目录或对应 zip 拷贝到目标机器即可直接运行。
 
 ## Coding Style & Naming Conventions
 - 语言：C#（.NET 8 WinForms），已启用 Nullable 与 Implicit Usings。

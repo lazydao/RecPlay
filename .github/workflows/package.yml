@@ -1,0 +1,110 @@
+name: Package RecPlay
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Package version, for example 1.0.0 or v1.0.0"
+        required: true
+        default: "1.0.0"
+      runtime:
+        description: "Runtime identifier"
+        required: true
+        default: "win-x64"
+      framework_dependent:
+        description: "Build a framework-dependent package instead of self-contained"
+        required: true
+        type: boolean
+        default: false
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Package Windows app
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Resolve package metadata
+        id: meta
+        shell: pwsh
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          INPUT_RUNTIME: ${{ github.event.inputs.runtime }}
+          INPUT_FRAMEWORK_DEPENDENT: ${{ github.event.inputs.framework_dependent }}
+        run: |
+          $version = $env:INPUT_VERSION
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            $version = $env:GITHUB_REF_NAME
+          }
+          if ($version.StartsWith("v", [System.StringComparison]::OrdinalIgnoreCase)) {
+            $version = $version.Substring(1)
+          }
+
+          $runtime = $env:INPUT_RUNTIME
+          if ([string]::IsNullOrWhiteSpace($runtime)) {
+            $runtime = "win-x64"
+          }
+
+          $frameworkDependent = $env:INPUT_FRAMEWORK_DEPENDENT
+          if ([string]::IsNullOrWhiteSpace($frameworkDependent)) {
+            $frameworkDependent = "false"
+          }
+          $frameworkDependent = $frameworkDependent.ToLowerInvariant()
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "runtime=$runtime" >> $env:GITHUB_OUTPUT
+          "framework_dependent=$frameworkDependent" >> $env:GITHUB_OUTPUT
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $args = @(
+            "-NoProfile",
+            "-ExecutionPolicy", "Bypass",
+            "-File", ".\build.ps1",
+            "-Version", "${{ steps.meta.outputs.version }}",
+            "-Runtime", "${{ steps.meta.outputs.runtime }}"
+          )
+
+          if ("${{ steps.meta.outputs.framework_dependent }}" -eq "true") {
+            $args += "-FrameworkDependent"
+          }
+
+          & powershell @args
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RecPlay-v${{ steps.meta.outputs.version }}-${{ steps.meta.outputs.runtime }}
+          path: release/*.zip
+          if-no-files-found: error
+
+      - name: Create or update GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $notes = "Automated RecPlay build for $tag."
+
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag release/*.zip --clobber
+          }
+          else {
+            gh release create $tag release/*.zip --title $tag --notes $notes
+          }
