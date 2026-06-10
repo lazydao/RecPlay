@@ -52,10 +52,16 @@ jobs:
           if ($version.StartsWith("v", [System.StringComparison]::OrdinalIgnoreCase)) {
             $version = $version.Substring(1)
           }
+          if ($version -notmatch '^\d+\.\d+\.\d+([.-][0-9A-Za-z.-]+)?$') {
+            throw "Invalid package version: $version"
+          }
 
           $runtime = $env:INPUT_RUNTIME
           if ([string]::IsNullOrWhiteSpace($runtime)) {
             $runtime = "win-x64"
+          }
+          if ($runtime -notmatch '^[0-9A-Za-z._-]+$') {
+            throw "Invalid runtime identifier: $runtime"
           }
 
           $frameworkDependent = $env:INPUT_FRAMEWORK_DEPENDENT
@@ -63,6 +69,9 @@ jobs:
             $frameworkDependent = "false"
           }
           $frameworkDependent = $frameworkDependent.ToLowerInvariant()
+          if ($frameworkDependent -notin @("true", "false")) {
+            throw "Invalid framework-dependent flag: $frameworkDependent"
+          }
 
           "version=$version" >> $env:GITHUB_OUTPUT
           "runtime=$runtime" >> $env:GITHUB_OUTPUT
@@ -70,16 +79,20 @@ jobs:
 
       - name: Package
         shell: pwsh
+        env:
+          META_VERSION: ${{ steps.meta.outputs.version }}
+          META_RUNTIME: ${{ steps.meta.outputs.runtime }}
+          META_FRAMEWORK_DEPENDENT: ${{ steps.meta.outputs.framework_dependent }}
         run: |
           $args = @(
             "-NoProfile",
             "-ExecutionPolicy", "Bypass",
             "-File", ".\build.ps1",
-            "-Version", "${{ steps.meta.outputs.version }}",
-            "-Runtime", "${{ steps.meta.outputs.runtime }}"
+            "-Version", $env:META_VERSION,
+            "-Runtime", $env:META_RUNTIME
           )
 
-          if ("${{ steps.meta.outputs.framework_dependent }}" -eq "true") {
+          if ($env:META_FRAMEWORK_DEPENDENT -eq "true") {
             $args += "-FrameworkDependent"
           }
 
